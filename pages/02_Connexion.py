@@ -6,8 +6,14 @@ from supabase import create_client
 
 st.set_page_config(page_title="Connexion - ONACC", layout="centered")
 
-client = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_ANON_KEY"])
-
+try:
+    supabase_url = st.secrets["SUPABASE_URL"]
+    supabase_key = st.secrets["SUPABASE_ANON_KEY"]
+    client = create_client(supabase_url, supabase_key)
+except KeyError as e:
+    st.error(f"❌ Secret manquant : {e}")
+    st.error("Vérifiez que les secrets sont bien configurés dans Streamlit Cloud")
+    st.stop()
 
 def do_login(email: str, password: str) -> None:
     email = (email or "").strip().lower()
