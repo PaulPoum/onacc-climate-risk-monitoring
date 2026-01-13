@@ -15,7 +15,6 @@ except KeyError as e:
     st.error("Vérifiez que les secrets sont bien configurés dans Streamlit Cloud")
     st.stop()
 
-
 def do_login(email: str, password: str) -> None:
     email = (email or "").strip().lower()
     password = (password or "").strip()
