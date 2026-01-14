@@ -1,10 +1,10 @@
 # app.py
 from __future__ import annotations
 
+import os
 import streamlit as st
 from supabase import create_client
 from postgrest.exceptions import APIError
-import os
 
 APP_TITLE = "ONACC Climate Risk Monitoring"
 
@@ -146,12 +146,11 @@ user_is_super_admin = is_super_admin(email)
 with st.sidebar:
     st.markdown(f"### {APP_TITLE}")
     st.caption(f"Connecté: {email or profile.get('email','')}")
-    
-    # Badge super-admin
+
     if user_is_super_admin:
         st.success("🔑 **SUPER-ADMIN**")
         st.caption("Accès complet à tous les modules")
-    
+
     if st.button("Déconnexion", use_container_width=True):
         logout()
 
@@ -168,9 +167,20 @@ if not user_is_super_admin and str(profile.get("access_status")) != "approved":
 
 # 3) Modules - Super-admin obtient TOUS les modules
 if user_is_super_admin:
-    # Super-admin : tous les modules disponibles
+    # Important : inclure MODULE1..MODULE9 pour cohérence UI (dashboard + contrôles)
     modules = [
         {"code": "DASHBOARD", "title": "Dashboard"},
+        {"code": "MODULE1", "title": "Module 1 - Veille"},
+        {"code": "MODULE2", "title": "Module 2 - Cartes"},
+        {"code": "MODULE3", "title": "Module 3 - Alertes"},
+        {"code": "MODULE4", "title": "Module 4 - Analyse"},
+        {"code": "MODULE5", "title": "Module 5 - Événements"},
+        {"code": "MODULE6", "title": "Module 6 - Territoires"},
+        {"code": "MODULE7", "title": "Module 7 - Utilisateurs"},
+        {"code": "MODULE8", "title": "Module 8 - Paramétrage"},
+        {"code": "MODULE9", "title": "Module 9 - Audit"},
+
+        # Pages fonctionnelles
         {"code": "CARTE", "title": "Cartes SIG"},
         {"code": "INGESTION_OPENMETEO", "title": "Ingestion"},
         {"code": "VEILLE_HOURLY", "title": "Veille Hourly"},
@@ -179,17 +189,14 @@ if user_is_super_admin:
         {"code": "ADMIN_APPROVALS", "title": "Admin"},
     ]
 else:
-    # Utilisateur normal : modules depuis RPC
     modules = get_modules(client)
 
 st.session_state["modules"] = modules
 
 # Mapping complet des pages
 module_to_page = {
-    # Dashboard principal
     "DASHBOARD": st.Page("pages/10_Dashboard.py", title="Dashboard", icon="📊"),
-    
-    # Pages fonctionnelles
+
     "CARTE": st.Page("pages/20_Carte.py", title="Cartes SIG", icon="🗺️"),
     "INGESTION_OPENMETEO": st.Page("pages/80_Ingestion_OpenMeteo.py", title="Ingestion Open-Meteo", icon="📥"),
     "VEILLE_HOURLY": st.Page("pages/81_Veille_Hourly_OpenMeteo.py", title="Veille Hourly", icon="⏱️"),
@@ -216,24 +223,20 @@ for code, filepath, title, icon in module_dashboards:
         module_to_page[code] = st.Page(filepath, title=title, icon=icon)
 
 pages: list[st.Page] = []
-
-# Dashboard toujours présent
 pages.append(module_to_page["DASHBOARD"])
 
-# Super-admin : TOUS les modules automatiquement
 if user_is_super_admin:
     for code, page in module_to_page.items():
         if code != "DASHBOARD" and page not in pages:
             pages.append(page)
 else:
-    # Utilisateur normal : modules autorisés uniquement
     allowed_codes = [m.get("code") for m in modules if m.get("code")]
-    
+
     for code in allowed_codes:
         if code == "DASHBOARD":
             continue
         if code == "ADMIN_APPROVALS":
-            continue  # Réservé aux super-admins
+            continue
         if code in module_to_page and module_to_page[code] not in pages:
             pages.append(module_to_page[code])
 
